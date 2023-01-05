@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 
 const { getRoom, getUserRooms } = require("../utils/rooms.func");
+const { getMessages } = require("../utils/messages.func");
 const { buildError, emitError } = require("../utils/errors.func");
 
 module.exports = (io, socket, redis) => {
@@ -64,5 +65,30 @@ module.exports = (io, socket, redis) => {
     socket.emit("join-room", { room, messages: [] });
 
     console.log(`[CREATE ROOM] ${idUser} : ${idRoom}`);
+  });
+
+  socket.on("join-room", async (data) => {
+    const { idRoom, idUser } = data;
+
+    // Check if the user is already in this room
+    const isMember = await redis.SISMEMBER(`users:${idUser}:rooms`, idRoom);
+
+    // Adding the user to the room
+    if (!isMember) {
+      await redis.SADD(`rooms:${idRoom}:users`, idUser);
+      await redis.SADD(`users:${idUser}:rooms`, idRoom);
+    }
+    socket.join(idRoom);
+
+    // Retrieve the messages
+    const messages = await getMessages(redis, idRoom);
+
+    // Retrieve the room
+    const room = await getRoom(redis, idRoom);
+
+    // We tell the user that he has joined the room
+    socket.emit("join-room", { room, messages });
+
+    console.log(`[JOIN ROOM] ${idUser} : ${idRoom}`);
   });
 };
