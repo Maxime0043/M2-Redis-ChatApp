@@ -1,9 +1,28 @@
 const { v4: uuidv4 } = require("uuid");
 
-const { getRoom } = require("../utils/rooms.func");
+const { getRoom, getUserRooms } = require("../utils/rooms.func");
 const { buildError, emitError } = require("../utils/errors.func");
 
 module.exports = (io, socket, redis) => {
+  socket.on("get-rooms", async (data) => {
+    // Data validation
+    if (!data || !data?.idUser || data?.idUser?.length == 0) {
+      const err = buildError("invalid-data", socket.request.eventTriggered);
+      emitError(socket, err);
+      return;
+    }
+
+    const { idUser } = data;
+
+    // Retrieve rooms
+    const rooms = await getUserRooms(redis, idUser);
+
+    // We send the list of rooms to the user
+    socket.emit("get-rooms", { rooms });
+
+    console.log(`[GET ROOMS] ${idUser}`);
+  });
+
   socket.on("create-room", async (data) => {
     // Data validation
     if (
