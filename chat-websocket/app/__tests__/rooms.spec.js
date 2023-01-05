@@ -88,4 +88,30 @@ describe("Room Socket", () => {
       });
     });
   });
+
+  describe("Event 'get-rooms'", () => {
+    test.each([
+      null,
+      "idUser",
+      {},
+      { id: "idUser1" },
+      { idUser: null },
+      { idUser: "" },
+    ])("Invalid data : %p", (data, done) => {
+      clientSocket.once("error", (res) => {
+        expect(res?.error).toBe("invalid-data");
+        done();
+      });
+      clientSocket.emit("get-rooms", data);
+    });
+
+    test("Valid data", (done) => {
+      clientSocket.once("get-rooms", (data) => {
+        expect(data).toBeDefined();
+        expect(data.rooms).toBeDefined();
+        done();
+      });
+      clientSocket.emit("get-rooms", { idUser: "idUser1" });
+    });
+  });
 });
