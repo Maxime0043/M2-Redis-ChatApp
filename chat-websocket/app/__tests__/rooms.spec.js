@@ -114,4 +114,54 @@ describe("Room Socket", () => {
       clientSocket.emit("get-rooms", { idUser: "idUser1" });
     });
   });
+
+  describe("Event 'join-room'", () => {
+    test.each([
+      null,
+      "idUser",
+      "idRoom",
+      {},
+      { id: "idUser1" },
+      { idUser: null, idRoom: null },
+      { idUser: "idUser1", idRoom: null },
+      { idUser: null, idRoom },
+      { idUser: "", idRoom: "" },
+    ])("Invalid data : %p", (data, done) => {
+      clientSocket.once("error", (res) => {
+        expect(res?.error).toBe("invalid-data");
+        done();
+      });
+      clientSocket.emit("join-room", data);
+    });
+
+    test("Invalid data : wrong idRoom", (done) => {
+      clientSocket.once("error", (res) => {
+        expect(res?.error).toBe("room-not-existing");
+        done();
+      });
+      clientSocket.emit("join-room", { idUser: "idUser2", idRoom: "wrong" });
+    });
+
+    test("Valid data", (done) => {
+      clientSocket.once("join-room", async (data) => {
+        const userInRoom = await redisClient.SISMEMBER(
+          `rooms:${idRoom}:users`,
+          "idUser2"
+        );
+        const userHasRoom = await redisClient.SISMEMBER(
+          `users:idUser2:rooms`,
+          idRoom
+        );
+
+        expect(data).toBeDefined();
+        expect(data.room).toBeDefined();
+        expect(data.room.name).toBe("first room");
+        expect(data.room.owner).toBe("idUser1");
+        expect(userInRoom).toBe(true);
+        expect(userHasRoom).toBe(true);
+        done();
+      });
+      clientSocket.emit("join-room", { idUser: "idUser2", idRoom });
+    });
+  });
 });
