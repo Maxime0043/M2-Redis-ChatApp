@@ -13,13 +13,27 @@ const io = new Server(httpServer, {
   },
 });
 
-// Websocket Manager
-io.on("connection", (socket) => {
-  console.log(`[CONNECTION] ${socket.id}`);
-
-  // Client disconnection
-  socket.on("disconnect", () => console.log(`[DISCONNECTION] ${socket.id}`));
+// Creation of a Redis client
+const redis = require("redis");
+const client = redis.createClient({
+  socket: {
+    host: process.env.REDIS_HOST || "localhost",
+    port: process.env.REDIS_PORT || 6379,
+  },
 });
+
+(async () => {
+  // Connecting to Redis
+  await client.connect();
+
+  // Websocket Manager
+  io.on("connection", (socket) => {
+    console.log(`[CONNECTION] ${socket.id}`);
+
+    // Client disconnection
+    socket.on("disconnect", () => console.log(`[DISCONNECTION] ${socket.id}`));
+  });
+})();
 
 module.exports = httpServer;
 module.exports.io = io;
