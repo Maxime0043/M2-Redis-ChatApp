@@ -22,6 +22,9 @@ const client = redis.createClient({
   },
 });
 
+// Retrieving controllers
+const controllers = require("./controllers");
+
 (async () => {
   // Connecting to Redis
   await client.connect();
@@ -29,6 +32,8 @@ const client = redis.createClient({
   // Websocket Manager
   io.on("connection", (socket) => {
     console.log(`[CONNECTION] ${socket.id}`);
+
+    controllers(io, socket, client);
 
     // Client disconnection
     socket.on("disconnect", () => console.log(`[DISCONNECTION] ${socket.id}`));
