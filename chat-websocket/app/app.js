@@ -22,8 +22,10 @@ const client = redis.createClient({
   },
 });
 
-// Retrieving controllers
+// Retrieving middlewares, controllers and utils
+const middlewares = require("./middlewares");
 const controllers = require("./controllers");
+const { emitError } = require("./utils/errors.func");
 
 (async () => {
   // Connecting to Redis
@@ -33,7 +35,13 @@ const controllers = require("./controllers");
   io.on("connection", (socket) => {
     console.log(`[CONNECTION] ${socket.id}`);
 
+    middlewares(socket, client);
     controllers(io, socket, client);
+
+    // Manage errors
+    socket.on("error", (err) => {
+      emitError(socket, err);
+    });
 
     // Client disconnection
     socket.on("disconnect", () => console.log(`[DISCONNECTION] ${socket.id}`));
