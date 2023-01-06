@@ -6,6 +6,25 @@ const subscriber = redis.createClient({
   },
 });
 
+// Build the filtering steps
+const steps = [];
+
 (async () => {
   await subscriber.connect();
+
+  const publisher = subscriber.duplicate();
+  await publisher.connect();
+
+  const channelRecieve = "chat-filter-start";
+  const channelSend = "chat-filter-end";
+
+  await subscriber.subscribe(channelRecieve, async (data) => {
+    data = JSON.parse(data);
+
+    steps.forEach((step) => {
+      data.messageData.message = step(data.messageData.message);
+    });
+
+    await publisher.publish(channelSend, JSON.stringify(data));
+  });
 })();
