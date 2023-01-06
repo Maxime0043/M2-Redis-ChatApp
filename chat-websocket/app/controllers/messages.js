@@ -1,6 +1,11 @@
 const { getMessage } = require("../utils/messages.func");
 
 module.exports = async (io, socket, redis) => {
+  // Manage Redis Pub
+  const publisher = redis.duplicate();
+  await publisher.connect();
+
+  // Manage Events
   socket.on("new-message", async (data) => {
     const { idUser, idRoom, message } = data;
 
@@ -15,12 +20,10 @@ module.exports = async (io, socket, redis) => {
       message,
     };
 
-    await redis.SADD(`rooms:${idRoom}:messages`, JSON.stringify(messageData));
-
-    // We send the message to the users of the room
-    io.to(idRoom).emit("new-message", { message: messageData });
-
-    console.log(`[NEW MESSAGE] ${idRoom} : ${JSON.stringify(messageData)}`);
+    await publisher.publish(
+      "chat-filter-start",
+      JSON.stringify({ idRoom, messageData })
+    );
   });
 
   socket.on("delete-message", async (data) => {
@@ -39,5 +42,21 @@ module.exports = async (io, socket, redis) => {
     io.to(idRoom).emit("delete-message", { idMessage });
 
     console.log(`[DELETE MESSAGE] ${idRoom} : ${idMessage}`);
+  });
+};
+
+// Manage Redis Sub
+module.exports.activateSubscribers = async (io, redis) => {
+  const subscriber = redis.duplicate();
+  await subscriber.connect();
+
+  await subscriber.subscribe("chat-filter-end", async (data) => {
+    const { idRoom, messageData } = JSON.parse(data);
+    await redis.SADD(`rooms:${idRoom}:messages`, JSON.stringify(messageData));
+
+    // We send the message to the users of the room
+    io.to(idRoom).emit("new-message", { message: messageData });
+
+    console.log(`[NEW MESSAGE] ${idRoom} : ${JSON.stringify(messageData)}`);
   });
 };

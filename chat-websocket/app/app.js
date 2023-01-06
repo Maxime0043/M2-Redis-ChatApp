@@ -27,9 +27,13 @@ const middlewares = require("./middlewares");
 const controllers = require("./controllers");
 const { emitError } = require("./utils/errors.func");
 
+const { activateSubscribers } = require("./controllers/messages");
+
 (async () => {
   // Connecting to Redis
   await client.connect();
+
+  activateSubscribers(io, client);
 
   // Websocket Manager
   io.on("connection", (socket) => {
