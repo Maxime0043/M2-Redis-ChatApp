@@ -8,6 +8,15 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+
+  chat-filters:
+    build: ./chat-filters
+    depends_on:
+      - redis
+      - websocket
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       
   redis:
     image: redis:alpine
