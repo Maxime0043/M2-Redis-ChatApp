@@ -15,5 +15,8 @@
   "license": "ISC",
   "dependencies": {
     "redis": "^4.5.1"
+  },
+  "devDependencies": {
+    "jest": "^29.3.1"
   }
 }
