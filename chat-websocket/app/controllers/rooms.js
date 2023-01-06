@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 
 const { getRoom, getUserRooms } = require("../utils/rooms.func");
+const { getUsers } = require("../utils/users.func");
 const { getMessages } = require("../utils/messages.func");
 const { buildError, emitError } = require("../utils/errors.func");
 
@@ -90,5 +91,36 @@ module.exports = (io, socket, redis) => {
     socket.emit("join-room", { room, messages });
 
     console.log(`[JOIN ROOM] ${idUser} : ${idRoom}`);
+  });
+
+  socket.on("delete-room", async (data) => {
+    const { idRoom, idUser } = data;
+
+    // Retrieve all users
+    const users = await getUsers(redis);
+
+    // Retrieve the room to delete
+    const room = await getRoom(redis, idRoom);
+
+    // Delete room
+    await redis.SREM(`rooms`, JSON.stringify(room));
+    await redis.DEL(`rooms:${idRoom}:users`);
+    await redis.DEL(`rooms:${idRoom}:messages`);
+    await redis.DEL(`rooms:${idRoom}:messages:id`);
+
+    console.log(users);
+
+    // Remove all users from the room
+    users.forEach(
+      async (user) => await redis.SREM(`users:${user.id}:rooms`, idRoom)
+    );
+
+    // We tell the users that the room has been deleted
+    io.to(idRoom).emit("delete-room", { idRoom });
+
+    // disconnect all users in the room
+    io.in(idRoom).socketsLeave(idRoom);
+
+    console.log(`[DELETE ROOM] ${idUser} : ${idRoom}`);
   });
 };
