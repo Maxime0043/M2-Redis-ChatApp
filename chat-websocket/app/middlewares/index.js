@@ -4,9 +4,15 @@ const { buildError } = require("../utils/errors.func");
 
 module.exports = (socket, redis) => {
   socket.use(async ([event, ...args], next) => {
-    const checkIfRoomExists = ["join-room", "delete-room", "new-message"];
+    const checkIfRoomExists = [
+      "join-room",
+      "delete-room",
+      "new-message",
+      "delete-message",
+    ];
     const checkIfUserIsOwner = ["delete-room"];
-    const checkIfUserIsMember = ["new-message"];
+    const checkIfUserIsMember = ["new-message", "delete-message"];
+    const checkIfUserIsAuthor = ["delete-message"];
     const checkMessageLength = ["new-message"];
 
     // We add the name of the triggering event in the socket request
@@ -55,6 +61,22 @@ module.exports = (socket, redis) => {
         const isMemberError = buildError("user-not-member", event);
 
         if (!isMember) return next(isMemberError);
+
+        // Check if the user is the author of the message
+        if (checkIfUserIsAuthor.includes(event)) {
+          // Verify if the variable "idMessage" is valid
+          if (!data?.idMessage || data?.idMessage?.length == 0)
+            return next(invalidDataError);
+
+          const { idMessage } = data;
+          const isAuthorError = buildError("user-not-author", event);
+
+          // Retrieve the message
+          const message = await getMessage(redis, idRoom, idMessage);
+
+          // If the message has not been found or if the user is not the author
+          if (!message || message?.author != idUser) return next(isAuthorError);
+        }
 
         // Checks if the message length is valid
         if (checkMessageLength.includes(event)) {
