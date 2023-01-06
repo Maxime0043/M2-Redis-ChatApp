@@ -144,4 +144,68 @@ describe("Message Socket", () => {
       });
     });
   });
+
+  describe("Event 'delete-messages'", () => {
+    test.each([
+      null,
+      "idUser",
+      {},
+      { id: "idUser1" },
+      { idUser: null, idRoom: null, idMessage: null },
+      { idUser: "idUser1", idRoom: null, idMessage: null },
+      { idUser: null, idRoom, idMessage: null },
+      { idUser: null, idRoom: null, idMessage },
+      { idUser: "", idRoom: "", idMessage: "" },
+    ])("Invalid data : %p", (data, done) => {
+      clientSocket.once("error", async (res) => {
+        const messagesCount = await redisClient.SCARD(
+          `rooms:${idRoom}:messages`
+        );
+
+        expect(res?.error).toBe("invalid-data");
+        expect(messagesCount).toBe(1);
+        done();
+      });
+      clientSocket.emit("delete-message", data);
+    });
+
+    test("Invalid data : user not author", (done) => {
+      clientSocket.once("error", async (res) => {
+        const messagesCount = await redisClient.SCARD(
+          `rooms:${idRoom}:messages`
+        );
+
+        expect(res?.error).toBe("user-not-author");
+        expect(messagesCount).toBe(1);
+        done();
+      });
+      clientSocket.emit("delete-message", {
+        idUser: "idUser2",
+        idRoom,
+        idMessage,
+      });
+    });
+
+    test("Valid data", (done) => {
+      clientSocket.once("delete-message", async (data) => {
+        const messagesCount = await redisClient.SCARD(
+          `rooms:${idRoom}:messages`
+        );
+        const nextIdMessage = await redisClient.GET(
+          `rooms:${idRoom}:messages:id`
+        );
+
+        expect(data).toBeDefined();
+        expect(data.idMessage).toBeDefined();
+        expect(messagesCount).toBe(0);
+        expect(nextIdMessage).toBe("1");
+        done();
+      });
+      clientSocket.emit("delete-message", {
+        idUser: "idUser1",
+        idRoom,
+        idMessage,
+      });
+    });
+  });
 });
