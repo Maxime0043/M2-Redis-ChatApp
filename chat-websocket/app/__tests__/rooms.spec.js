@@ -164,4 +164,73 @@ describe("Room Socket", () => {
       clientSocket.emit("join-room", { idUser: "idUser2", idRoom });
     });
   });
+
+  describe("Event 'delete-room'", () => {
+    test.each([
+      null,
+      "idUser",
+      "idRoom",
+      {},
+      { id: "idUser1" },
+      { idUser: null, idRoom: null },
+      { idUser: "idUser1", idRoom: null },
+      { idUser: null, idRoom },
+      { idUser: "", idRoom: "" },
+    ])("Invalid data : %p", (data, done) => {
+      clientSocket.once("error", (res) => {
+        expect(res?.error).toBe("invalid-data");
+        done();
+      });
+      clientSocket.emit("delete-room", data);
+    });
+
+    test("Invalid data : wrong idRoom", (done) => {
+      clientSocket.once("error", (res) => {
+        expect(res?.error).toBe("room-not-existing");
+        done();
+      });
+      clientSocket.emit("delete-room", { idUser: "idUser1", idRoom: "wrong" });
+    });
+
+    test("Invalid data : user does not own the room", (done) => {
+      clientSocket.once("error", (res) => {
+        expect(res?.error).toBe("user-not-owner");
+        done();
+      });
+      clientSocket.emit("delete-room", { idUser: "idUser2", idRoom });
+    });
+
+    test("Valid data", (done) => {
+      clientSocket.once("delete-room", async (data) => {
+        const rooms = await redisClient.SMEMBERS("rooms");
+        const room = rooms.find((room) => JSON.parse(room).id == idRoom);
+        const user1InRoom = await redisClient.SISMEMBER(
+          `rooms:${idRoom}:users`,
+          "idUser1"
+        );
+        const user2InRoom = await redisClient.SISMEMBER(
+          `rooms:${idRoom}:users`,
+          "idUser2"
+        );
+        const user1HasRoom = await redisClient.SISMEMBER(
+          `users:idUser1:rooms`,
+          idRoom
+        );
+        const user2HasRoom = await redisClient.SISMEMBER(
+          `users:idUser2:rooms`,
+          idRoom
+        );
+
+        expect(data).toBeDefined();
+        expect(data.idRoom).toBeDefined();
+        expect(room).toBeUndefined();
+        expect(user1InRoom).toBe(false);
+        expect(user2InRoom).toBe(false);
+        expect(user1HasRoom).toBe(false);
+        expect(user2HasRoom).toBe(false);
+        done();
+      });
+      clientSocket.emit("delete-room", { idUser: "idUser1", idRoom });
+    });
+  });
 });
