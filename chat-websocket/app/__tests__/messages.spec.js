@@ -2,6 +2,9 @@ const Client = require("socket.io-client");
 const httpServer = require("../app");
 const { io } = require("../app");
 
+// Start chat filters
+require("../../../chat-filters/app/index");
+
 // Creation of a Redis client
 const redis = require("redis");
 const redisClient = redis.createClient({
