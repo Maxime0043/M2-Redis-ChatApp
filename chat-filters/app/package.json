@@ -1,0 +1,16 @@
+{
+  "name": "chat-filters",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Maxime PINNA",
+    "email": "max.pinna@hotmail.fr",
+    "url": "https://github.com/Maxime0043"
+  },
+  "license": "ISC"
+}
