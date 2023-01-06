@@ -7,7 +7,8 @@ const subscriber = redis.createClient({
 });
 
 // Build the filtering steps
-const steps = [];
+const { formatMessage, filterInsults } = require("./filters");
+const steps = [formatMessage, filterInsults];
 
 (async () => {
   await subscriber.connect();
