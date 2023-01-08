@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import express from 'express'
 import helmet from 'helmet'
+import redis from 'redis'
 import cookieParser from 'cookie-parser'
 import cors from 'cors';
 
@@ -22,6 +23,22 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', userSchema);
+
+/**
+ * DATABASE REDIS
+ * 
+ */
+const REDIS_HOST = process.env.REDIS_HOST
+const REDIS_PORT = process.env.REDIS_PORT
+
+const client = redis.createClient(
+  {
+    socket: {
+      host: REDIS_HOST,
+      port: REDIS_PORT,
+    },
+  }
+);
 
 /**
  * API
