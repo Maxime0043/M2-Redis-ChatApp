@@ -2,6 +2,8 @@ services:
 
   frontend:
     build: ./spa
+    ports:
+      - 80:80
     depends_on:
       - websocket
     deploy:
@@ -34,6 +36,8 @@ services:
 
   authentication:
     build: ./auth
+    ports:
+      - 3001:3001
     environment:
       - EXPRESS_PORT=3001
       - MONGO_HOST=mongo
