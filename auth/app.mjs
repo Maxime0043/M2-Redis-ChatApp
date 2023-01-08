@@ -15,6 +15,14 @@ if (!MONGO_HOST) throw new Error(
 
 await mongoose.connect(`mongodb://${MONGO_HOST}:27017/users`);
 
+const userSchema = new mongoose.Schema({
+    username: String,
+    email: String,
+    password: String
+});
+
+const User = mongoose.model('User', userSchema);
+
 /**
  * API
  *
