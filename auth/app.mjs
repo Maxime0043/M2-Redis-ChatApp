@@ -5,6 +5,11 @@ import redis from 'redis'
 import cookieParser from 'cookie-parser'
 import cors from 'cors';
 
+const SESSION_MAX_AGE = process.env.SESSION_MAX_AGE
+if (!SESSION_MAX_AGE) throw new Error(
+    "Please define SESSION_MAX_AGE"
+)
+
 /**
  * DATABASE MONGO
  *
