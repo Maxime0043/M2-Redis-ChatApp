@@ -1,6 +1,8 @@
 import mongoose from 'mongoose'
 import express from 'express'
 import helmet from 'helmet'
+import Joi from 'joi'
+import bcrypt from 'bcrypt'
 import redis from 'redis'
 import cookieParser from 'cookie-parser'
 import cors from 'cors';
@@ -65,6 +67,37 @@ app.use(cors(corsOptions))
 app.use(cookieParser())
 
 app.use(express.json())
+
+app.post('/register', async (req, res) => {
+    const payload = req.body
+
+    // payload validation
+    const scheme = Joi.object({
+        email: Joi.string().min(5).max(255).email().required(),
+        username: Joi.string().min(5).max(255).required(),
+        password: Joi.string().min(5).max(255).required()
+    });
+    const {value, error} = scheme.validate(payload);
+    if (error) return res.status(400).json({
+        error: error.details[0].message
+    })
+
+    // don't create account if it already exists
+    const user = await User.findOne({email: value.email})
+    if (user) return res.status(400).json({
+        error: "This account already exists"
+    })
+
+    // create user in DB
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(value.password, salt);
+    value.password = passwordHash;
+    const userCreated = new User(value);
+    await userCreated.save();
+
+    // done ✅
+    res.status(201).send({email: value.email, username: value.username});
+})
 
 const EXPRESS_PORT = process.env.EXPRESS_PORT
 if (!EXPRESS_PORT) throw new Error(
