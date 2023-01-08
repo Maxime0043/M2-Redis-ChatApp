@@ -8,6 +8,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css'
 
 
 const app = createApp(App)
+
 app.use(plugin, defaultConfig);
 app.use(router)
 
