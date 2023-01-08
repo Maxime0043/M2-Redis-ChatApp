@@ -60,7 +60,7 @@ app.disable('x-powered-by')
 
 // cors
 const corsOptions = {
-  origin: "*",
+  origin: ['http://localhost:4173', 'http://localhost:5173'],
   credentials: true,
 }
 app.use(cors(corsOptions))
