@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import Joi from 'joi'
 import bcrypt from 'bcrypt'
 import redis from 'redis'
+import { v4 as uuidv4 } from 'uuid';
 import cookieParser from 'cookie-parser'
 import cors from 'cors';
 
@@ -97,6 +98,44 @@ app.post('/register', async (req, res) => {
 
     // done ✅
     res.status(201).send({email: value.email, username: value.username});
+})
+
+app.post("/login", async (req, res) => {
+    const payload = req.body
+
+    // payload validation
+    const scheme = Joi.object({
+        email: Joi.string().min(5).max(255).email().required(),
+        password: Joi.string().min(5).max(255).required()
+    });
+    const {value, error} = scheme.validate(payload);
+    if (error) return res.status(400).json({
+        error: error.details[0].message
+    })
+
+    // get user from db
+    const user = await User.findOne({email: value.email})
+    if (!user) return res.status(400).json({
+        error: "Bad credentials"
+    })
+
+    // check the password hash
+    const passwordIsValid = await bcrypt.compare(payload.password, user.password);
+    if (!passwordIsValid) return res.status(400).json({
+        error: "Bad credentials"
+    })
+
+    // authenticate by sending back a cookie containing a session id associated with a redis hash
+    await client.connect()
+    const sid = uuidv4()
+
+    // Create a redis session that expire after one hour
+    await client.hSet('user-session:' + sid, 'userId', user._id.toString()) 
+    
+    // Clean deconnexion of redis
+    await client.quit()
+
+    res.status(200).cookie("session_id", sid, { maxAge: SESSION_MAX_AGE * 1000 }).json({ username: user.username, userId: user._id.toString() })
 })
 
 const EXPRESS_PORT = process.env.EXPRESS_PORT
