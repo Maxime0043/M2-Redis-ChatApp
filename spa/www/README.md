@@ -1,29 +1,17 @@
-# www
+# Commands
 
-This template should help get you started developing with Vue 3 in Vite.
+## Docker Compose
 
-## Recommended IDE Setup
+If you want to start the service with Docker Compose, 
+you need to build the spa application at `spa/www` and run `npm run build`.
+Then, you just have to enter the command `docker compose up` at the root of the project.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+## Local
 
-## Customize configuration
+If you want to start the service locally, you will need :
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+run `npm i`
 
-## Project Setup
+You can now enter the commands :
 
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
+> `npm run dev`
