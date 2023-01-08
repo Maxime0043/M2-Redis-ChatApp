@@ -7,7 +7,7 @@ module.exports = async (io, socket, redis) => {
 
   // Manage Events
   socket.on("new-message", async (data) => {
-    const { idUser, idRoom, message } = data;
+    const { idUser, idRoom, message, username } = data;
 
     // We create the identifier of the message
     const idMessage = await redis.INCR(`rooms:${idRoom}:messages:id`);
@@ -18,6 +18,7 @@ module.exports = async (io, socket, redis) => {
       author: idUser,
       date: Date.now(),
       message,
+      username,
     };
 
     await publisher.publish(
@@ -39,7 +40,7 @@ module.exports = async (io, socket, redis) => {
     await redis.SREM(`rooms:${idRoom}:messages`, JSON.stringify(message));
 
     // We indicate to the users of the room the message to delete
-    io.to(idRoom).emit("delete-message", { idMessage });
+    io.to(idRoom).emit("delete-message", { idMessage: idMessage, idRoom: idRoom });
 
     console.log(`[DELETE MESSAGE] ${idRoom} : ${idMessage}`);
   });
@@ -55,7 +56,7 @@ module.exports.activateSubscribers = async (io, redis) => {
     await redis.SADD(`rooms:${idRoom}:messages`, JSON.stringify(messageData));
 
     // We send the message to the users of the room
-    io.to(idRoom).emit("new-message", { message: messageData });
+    io.to(idRoom).emit("new-message", { message: messageData, idRoom: idRoom });
 
     console.log(`[NEW MESSAGE] ${idRoom} : ${JSON.stringify(messageData)}`);
   });
